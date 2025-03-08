@@ -4,12 +4,14 @@ import os
 import xml.etree.ElementTree as ET
 import yaml
 
+# 从 KML 文件中提取航点
 def extract_waypoints_from_kml(kml_file):
     ns = {'kml': 'http://www.opengis.net/kml/2.2'}
     tree = ET.parse(kml_file)
     root = tree.getroot()
     waypoints = []
     
+    # 查找所有的 Placemark 标签
     for placemark in root.findall('.//kml:Placemark', ns):
         description = placemark.find('.//kml:description', ns)
         if description is None:
@@ -18,15 +20,22 @@ def extract_waypoints_from_kml(kml_file):
             coords = placemark.find('.//kml:coordinates', ns)
             if coords is not None and coords.text:
                 lon, lat, _ = coords.text.strip().split(',')
-                waypoints.append([float(lon), float(lat)])
+                waypoints.append([float(lon), float(lat)])  # 将经纬度作为列表追加到航点列表
     
     return waypoints
 
+# 将航点数据生成 YAML 格式并保存
 def generate_yaml(waypoints, output_file):
     yaml_data = {"points": waypoints}
+    
+    # 将每个航点强制转换为 [经度, 纬度] 格式并写入 YAML 文件
     with open(output_file, 'w') as f:
-        yaml.dump(yaml_data, f, default_flow_style=False, sort_keys=False, allow_unicode=True, indent=2)
+        f.write("points:\n")
+        for waypoint in waypoints:
+            # 强制写成方括号格式
+            f.write(f"- [{waypoint[0]}, {waypoint[1]}]\n")
 
+# 拖入文件处理函数
 def on_drop(event):
     kml_file = event.data.strip('{}')  # 去除拖入路径的额外符号
     if not os.path.exists(kml_file):
